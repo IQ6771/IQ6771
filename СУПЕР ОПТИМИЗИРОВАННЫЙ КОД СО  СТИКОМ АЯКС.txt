@@ -1,0 +1,213 @@
+#include <Arduino.h>         // подключение стандартной библиотеки Arduino 
+#include <LittleFS.h>        // подключение библиотеки для работы с файловой системой
+#include <ESPAsyncWebServer.h>  // подключение библиотеки для создания веб-сервера
+#include <WiFi.h>            // подключение библиотеки для работы с Wi-Fi
+#include <Servo.h>           // подключение библиотеки для управления сервоприводами
+
+AsyncWebServer server(80);   // создание объекта асинхронного веб-сервера на порту 80
+Servo servo;                 // создание объекта сервопривода
+int angle;                   // объявление переменной для управления углом сервопривода
+
+void serv(int val)           // функция для управления сервоприводом на основе значения val
+{
+  if (val >= 0 && val <= 100)  // если значение находится в допустимом диапазоне
+  {
+    angle = map(val, 0, 100, 0, 180);  // преобразуем значение из диапазона [0, 100] в диапазон [0, 180], чтобы управлять углом сервопривода
+    servo.write(angle);         // устанавливаем угол поворота сервопривода
+    delay(5);                  // задержка, необходимая для устранения дребезга контактов
+  }
+}
+
+void setup()                  // функция, вызываемая один раз при старте программы
+{
+  servo.attach(14);           // подключаем сервопривод к пину 14
+  LittleFS.begin();           // инициализируем файловую систему SPIFFS
+  Serial.begin(115200);       // инициализируем последовательный порт с скоростью 115200 бит/с
+
+  WiFi.begin("TP-Link_CC5C", "01499124");  // подключаемся к Wi-Fi сети с заданным именем и паролем
+  while (WiFi.waitForConnectResult() != WL_CONNECTED)  // ждем, пока микроконтроллер не подключится к Wi-Fi
+  {
+    Serial.print(".");                       // выводим точки на последовательный порт для индикации процесса подключения
+    delay(100);
+  }
+  Serial.print(WiFi.localIP());               // выводим локальный IP-адрес на последовательный порт
+
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)  // обработчик запросов на адрес "/"
+  {
+    int params = request->params();           // получаем количество параметров запроса
+    for (int i = 0; i < params; i++)          // проходимся по всем параметрам
+    { 
+      AsyncWebParameter* param = request->getParam(i);  // получаем очередной параметр запроса
+      String val = param->value();                       // получаем значение параметра в виде строки
+      int spaceIndex = val.indexOf(' ');                  // ищем позицию пробела в строке
+      String val1str = val.substring(0, spaceIndex);        // получаем первое число из строки
+      String val2str = val.substring(spaceIndex + 1);         // получаем второе число из строки
+      int valx = val1str.toInt();                            // преобразуем первое число в целочисленный тип
+      int valy = val2str.toInt();                            // преобразуем второе число в целочисленный тип
+      serv(valx);                                            // вызываем функцию для управления сервоприводом на основе первого числа
+    } 
+    request->send(LittleFS, "/index.html", String(), false);  // отправляем ответ клиенту, загружая файл index.html из файловой системы
+  });
+
+  server.begin();            // запускаем асинхронный веб-сервер
+}
+
+void loop()                   // функция, которая выполняется постоянно
+{
+  // здесь ничего не делаем
+}
+
+HTML
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Устанавливаем кодировку документа -->
+    <meta charset="UTF-8" />
+    <!-- Указываем, чтобы IE использовал последнюю версию движка рендеринга -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <!-- Устанавливаем метаданные страницы для адаптивной верстки -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div id="stick">
+      <div id="stick-thumb"></div>
+    </div>
+    <style>
+      /* Стили для stick и stick-thumb */
+      #stick {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background-color: gray;
+        position: relative;
+        margin: 20px auto;
+      }
+
+      #stick-thumb {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: white;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+    </style>
+    <script>
+      // Получаем элементы на странице
+      const stick = document.getElementById("stick");
+      const stickThumb = document.getElementById("stick-thumb");
+
+      // Объявляем переменные для драга пальцем/мышью
+      let isDragging = false;
+      let stickCenterX = stick.offsetWidth / 2;
+      let stickCenterY = stick.offsetHeight / 2;
+      let dragStartX, dragStartY;
+      let interval;
+
+      // Вешаем обработчики на события mousedown и touchstart
+      stick.addEventListener("mousedown", startDrag);
+      stick.addEventListener("touchstart", startDrag);
+
+      // Функция для начала перетаскивания элемента
+      function startDrag(event) {
+        if (interval) {
+          clearInterval(interval);
+        }
+
+        isDragging = true;
+
+        // Получаем начальные координаты клика/тача
+        if (event.type === "mousedown") {
+          dragStartX = event.clientX;
+          dragStartY = event.clientY;
+        } else {
+          dragStartX = event.touches[0].clientX;
+          dragStartY = event.touches[0].clientY;
+        }
+
+        // Вешаем обработчики на события mousemove и touchmove
+        document.addEventListener("mousemove", dragStick);
+        document.addEventListener("touchmove", dragStick);
+        // Вешаем обработчики на события mouseup и touchend
+        document.addEventListener("mouseup", stopDrag);
+        document.addEventListener("touchend", stopDrag);
+
+        // Запускаем интервал для отправки запроса на сервер
+        interval = setInterval(sendGetRequest, 100);
+      }
+
+      // Функция для перемещения элемента
+      function dragStick(event) {
+        if (isDragging) {
+          event.preventDefault();
+
+          let x, y;
+
+          // Получаем координаты перемещения мыши/пальца
+          if (event.type === "mousemove") {
+            x = event.clientX;
+            y = event.clientY;
+          } else {
+            x = event.touches[0].clientX;
+            y = event.touches[0].clientY;
+          }
+
+          let dx = x - dragStartX;
+          let dy = y - dragStartY;
+          let distance = Math.sqrt(dx * dx + dy * dy);
+
+          // Ограничиваем перемещение элемента
+          if (distance > 50) {
+            dx = (dx / distance) * 50;
+            dy = (dy / distance) * 50;
+          }
+
+          // Перемещаем элемент
+          stickThumb.style.left = stickCenterX + dx + "px";
+          stickThumb.style.top = stickCenterY + dy + "px";
+        }
+      }
+
+      // Функция для окончания перетаскивания элемента
+      function stopDrag(event) {
+        isDragging = false;
+
+        // Выключаем обработчики событий mousemove, touchmove, mouseup, touchend
+        document.removeEventListener("mousemove", dragStick);
+        document.removeEventListener("touchmove", dragStick);
+        document.removeEventListener("mouseup", stopDrag);
+        document.removeEventListener("touchend", stopDrag);
+
+        // Сбрасываем координаты элемента
+        stickThumb.style.left = "50%";
+        stickThumb.style.top = "50%";
+
+        // Выключаем отправку запроса на сервер
+        clearInterval(interval);
+        interval = null;
+      }
+
+      // Функция для отправки AJAX-запроса на сервер
+      function sendGetRequest() {
+        const dx = parseFloat(stickThumb.style.left) - stickCenterX;
+        const dy = parseFloat(stickThumb.style.top) - stickCenterY;
+        const xhttp = new XMLHttpRequest();
+        xhttp.open(
+          "GET",
+          "?dx=" + (dx / 50 * 100) + "&dy=" + (dy / 50 * 100),
+          true
+        );
+        xhttp.send();
+      }
+    </script>
+  </body>
+
+
+  xhttp.open("GET", `?${control}=${value}`, true);
+
+
+    html += "<script>"; html += "setInterval(function() {"; html += "var xmlhttp = new XMLHttpRequest();"; html += "xmlhttp.open('GET', '/set?speed=' + document.getElementById('speed_range').value + '&angle=' + document.getElementById('angle_range').value, true);"; html += "xmlhttp.send();"; html += "}, 100);"; html += "</script>";
+    server.send(200, "text/html", html);

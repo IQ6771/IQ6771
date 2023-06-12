@@ -1,0 +1,38 @@
+#include <Arduino.h>
+#include <LittleFS.h>
+#include <vector>
+using namespace std;
+
+void setup()
+{
+  Serial.begin(115200);
+  LittleFS.begin();
+}
+
+void arrm(int *value)
+{
+  Serial.println(*value);
+  vector<String> arr;
+
+  File f = LittleFS.open("/xxx.txt", "r");
+
+  while (f.available())
+  {
+    arr.push_back(f.readStringUntil('\n'));
+
+    
+  }
+  Serial.println(arr[*value]);
+  f.close();
+}
+
+void loop()
+{
+  if (Serial.available() > 0)
+  {
+    int value = Serial.read() - '0';
+    
+    delay(500);
+    arrm(&value);
+  }
+}

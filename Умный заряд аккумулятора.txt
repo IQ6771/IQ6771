@@ -1,0 +1,73 @@
+#include <Arduino.h>
+
+// Обозначаем рабочие пины
+int analogPin = 7;
+int digitalPin = 2;
+bool max = false;
+
+// Функция преобразования занчений с аналогового входа
+int Volt(int val)
+{
+ int var =  analogRead(val);
+ int y = map(var,0,960,0,100);
+ return y;
+}
+// Функция-условие, при которой идёт управление заряда
+int timer_if(int var)
+{
+  // Если нарпяжени на баттареи  = 100% и переменная ложная, то идет заряд
+  if(var <= 100 && max == false)
+  {
+    digitalWrite(digitalPin,LOW);
+  
+    Serial.println(String(var) +"."+ "% " + "ЗАРЯДА!");
+    // Если значение приблизилось к 100% то мы изменяем значение max на истину, в связи с этим входим во второе условие
+    if(var == 100)
+    {
+      max = !max;
+    }
+    // Второе условие
+  }
+  else if(max == true)
+  {
+// Если max истина то мы включаем реле,идет отклбчение заряда,но немного падает напряжжение
+    digitalWrite(digitalPin,HIGH);
+    Serial.println(String(var) +"."+ "% " + "ЗАРЯДА!");
+    // Падение напряжение в пределах 98 процентов.Если меньше 98 то мы снова заряжаем, отключаем реле и переворачиваем значение max на ложь
+    if( var < 98)
+    {
+      digitalWrite(digitalPin,LOW);
+      max = !max;
+
+    }
+
+  }
+
+
+
+
+  return 0;
+
+}
+
+void setup() {
+  // Иницилизация
+  Serial.begin(9600);
+  pinMode(analogPin,INPUT);
+  pinMode(digitalPin,OUTPUT);
+ 
+
+}
+
+
+// Запускфункций с задержкой 0.5 секунды
+void loop() {
+int value = Volt(analogPin);
+timer_if(value);
+delay(500);
+
+
+
+
+
+}

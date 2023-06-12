@@ -1,0 +1,22 @@
+#include <Arduino.h>
+int x = 5;
+int ox = 6;
+void setup() {
+  Serial.begin(9600);
+  pinMode(x,OUTPUT);
+  pinMode(ox,INPUT);
+ 
+}
+
+void loop() {
+
+// while(Serial.available() == 0);
+
+//   int y = Serial.read() -'0';
+  int signal = analogRead(ox);
+  int v = map(signal,0,1023,0,255);
+  analogWrite(x,v);
+  Serial.println(signal);
+
+
+}

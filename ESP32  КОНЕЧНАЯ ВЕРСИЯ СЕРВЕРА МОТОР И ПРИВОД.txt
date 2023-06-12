@@ -1,0 +1,99 @@
+#include <WebServer.h>
+#include <Servo.h>
+
+WebServer server(80);
+
+Servo myservo; // создание объекта класса Servo
+
+int speed = 0;
+int angle = 0;
+
+void setup() // функция, вызываемая один раз при старте программы
+{
+
+  pinMode(13, OUTPUT);
+  myservo.attach(14);   // Прикрепляем сервопривод к порту 26         // инициализируем файловую систему SPIFFS
+  Serial.begin(115200); // инициализируем последовательный порт с скоростью 115200 бит/с
+
+  WiFi.begin("TP-Link_CC5C", "01499124");             // подключаемся к Wi-Fi сети с заданным именем и паролем
+  while (WiFi.waitForConnectResult() != WL_CONNECTED) // ждем, пока микроконтроллер не подключится к Wi-Fi
+  {
+    Serial.print("."); // выводим точки на последовательный порт для индикации процесса подключения
+    delay(100);
+  }
+  Serial.print(WiFi.localIP()); // выводим локальный IP-адрес на последовательный порт
+
+  server.on("/", []()
+            {
+  String 
+  html = "<html><head";
+  html += "<meta name='viewport' content='width=device-width, initial-scale=1'>";
+
+  html += "<style>";
+  html += "input[type=range]::-webkit-slider-thumb {";
+  html += "-webkit-transform: scale(3);";
+  html += "transform: scale(3);";
+  html += "}";
+
+  html += "</style>";
+  html += "</head><body>";
+html += "<h1 style='margin-bottom: 10px;'>ESP32 Servo Control</h1>"; 
+ html += "<label for='speed_range' style='display: block; margin-bottom: 20px;'>Speed:</label>"; 
+  html += "<input type='range' id='speed_range' min='0' max='255' value='0' step='1' onchange='updateSpeed(this.value)' class='form-control'><br>"; 
+   html += "<label for='angle_range' style='display: block; margin-bottom: 450px;'>Angle:</label>"; 
+   html += "<input type='range' id='angle_range' min='0' max='180' value='0' step='1' onchange='updateAngle(this.value)' class='form-control'>";
+
+  // html += "<link href='https://vjs.zencdn.net/7.15.4/video-js.css' rel='stylesheet' /><script src='https://vjs.zencdn.net/7.15.4/video.min.js'></script>";
+  // html += " <video id='my-video' class='video-js' controls preload='auto'width='640' height='264' data-setup='{}'><source src='https://ok.ru/video/1115050286838?fromTime=42551.m3u8' type='application/x-mpegURL' /></video><script var player = videojs('my-video');</script>";
+
+  html += "<script>";
+  html += "function updateSpeed(val) {";
+  html += "var xmlhttp = new XMLHttpRequest();";
+  html += "xmlhttp.open('GET', '/set?speed=' + val + '&angle=' + document.getElementById('angle_range').value, true);";
+  html += "xmlhttp.send();";
+  html += "var duty = (val / 255.0) * 100.0;";
+  html += "ledcWrite(0, duty);"; // установка скорости мотора
+  html += "}";
+  html += "function updateAngle(val) {";
+  html += "var xmlhttp = new XMLHttpRequest();";
+  html += "xmlhttp.open('GET', '/set?speed=' + document.getElementById('speed_range').value + '&angle=' + val, true);";
+  html += "xmlhttp.send();";
+  html += "}";
+  html += "setInterval(function() {";
+  html += "var speedVal = document.getElementById('speed_range').value;";
+  html += "var angleVal = document.getElementById('angle_range').value;";
+  html += "var xmlhttp = new XMLHttpRequest();";
+  html += "xmlhttp.open('GET', '/set?speed=' + speedVal + '&angle=' + angleVal, true);";
+  html += "xmlhttp.send();";
+  html += "}, 100);";
+  html += "</script>";
+  html += "</body></html>";
+  server.send(200, "text/html", html); });
+
+  server.on("/set", []()
+            {
+    if(server.hasArg("speed")) speed = server.arg("speed").toInt();
+    if(server.hasArg("angle")) angle = server.arg("angle").toInt();
+
+    Serial.print("Speed: "); // вывод отладочного сообщени о скорости на СОМ-порт
+    Serial.println(speed);
+    Serial.print("Angle: "); // вывод отладочного сообщени об угле поворота на СОМ-порт
+    Serial.println(angle);
+
+    // Устанавливаем скорость мотора
+    // Your code here
+
+    analogWrite(13,speed);
+    // Устанавливаем угол поворота сервопривода
+    myservo.write(angle);
+
+    server.sendHeader("Location", "/");
+    server.send(302); });
+
+  server.begin();
+}
+
+void loop()
+{
+  server.handleClient();
+}

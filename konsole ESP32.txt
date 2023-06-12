@@ -1,0 +1,92 @@
+#include <Arduino.h>
+#include <WiFi.h>
+
+
+
+const int x22 = 22;
+const int x23 = 23;
+const int x21 = 21;
+int count = 0;
+String daniil;
+
+
+void setup() {
+Serial.begin(115200);
+pinMode(x23, INPUT);
+pinMode(x22, INPUT);
+pinMode(x21, INPUT);
+    WiFi.mode(WIFI_STA);
+    WiFi.disconnect();
+}
+
+void scanWiFi()
+{
+    int scan = WiFi.scanNetworks();
+    for(int i = 0 ; i<scan;i++)
+    {
+        delay(200);
+        Serial.println((String)i + "."+ WiFi.SSID(i) + " " +  WiFi.RSSI(i) );
+       
+    }
+    
+}
+
+void knopkaNEXT() {
+int val = digitalRead(x22);
+int var = digitalRead(x23);
+
+char general [] = {
+'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D',
+'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
+'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
+};
+int size = sizeof(general) / sizeof(char);
+for (int i = 0; i < size; i++) {
+if (digitalRead(x23)) {
+delay(70);
+
+if (digitalRead(x23) != 0) {
+count++;
+Serial.println(general[count]);
+}
+
+}
+if (digitalRead(x22)) {
+delay(70);
+if (digitalRead(x22)) {
+
+    count--;
+    Serial.println(general[count]);
+}
+
+}
+if (digitalRead(x21)) {
+   delay(90);
+  if(digitalRead(x21))
+  {
+  daniil +=general[count];
+  Serial.println(daniil);
+  }
+}
+}
+}
+
+
+void loop() {
+
+
+    if(digitalRead(x22) && digitalRead(x23))
+    {
+       
+            scanWiFi();
+        
+    
+    }
+    knopkaNEXT();
+
+}
+
+

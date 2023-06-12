@@ -1,0 +1,127 @@
+// Импортируем необходимые библиотеки
+#include <Arduino.h>
+#include <WiFi.h>
+#include <vector>
+
+using namespace std;
+
+// Создаем вектор строк для хранения информации о доступных WiFi-сетях
+vector <String> WiFiSTR;
+
+// Объявляем ПОТОК НМЕР 1 TaskHandle_t для будущего использования
+TaskHandle_t ONE1;
+
+// Константы для определения порта кнопок
+const int x22 = 22;
+const int x23 = 23;
+const int x21 = 21;
+
+// Переменные, которые будут изменяться по мере переключения между символами
+int nex = 0;
+String daniil;
+
+// Функция, которая будет выполняться параллельно основному циклу
+void knopkaNEXT(void* PARAMETOR) {
+while(true) {
+// Считываем значение состояния пинов кнопок
+int val = digitalRead(x22);
+int var = digitalRead(x23);
+
+
+// Создаем массив символов
+char general [] = {
+  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+  'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+  'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D',
+  'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
+  'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
+};
+
+// Определяем размер массива символов
+int size = sizeof(general) / sizeof(char);
+
+// Перебираем все символы в массиве
+for (int i = 0; i < size; i++) {
+  // Если нажата кнопка "var"
+  if (digitalRead(x23)) {
+    delay(70);
+
+    // Если кнопка "var" не отпущена, то переходим к следующему символу
+    if (digitalRead(x23) != 0) {
+      nex++;
+      Serial.println(general[nex]);
+    }
+  }
+
+  // Если нажата кнопка "val"
+  if (digitalRead(x22)) {
+    delay(70);
+
+    // Если кнопка "val" не отпущена, то переходим к предыдущему символу
+    if (digitalRead(x22)) {
+      nex--;
+      Serial.println(general[nex]);
+    }
+  }
+
+  // Если нажата кнопка "x21"
+  if (digitalRead(x21)) {
+    delay(90);
+    if(digitalRead(x21)) {
+      daniil +=general[nex];
+      Serial.println(daniil);
+    }
+  }
+}
+
+// Делаем задержку на 1 мс и продолжаем цикл
+vTaskDelay(1 / portTICK_RATE_MS);
+}
+}
+
+void setup() {
+// Инициализируем сериал порт
+Serial.begin(115200);
+
+// Настраиваем пины кнопок как входы
+pinMode(x23, INPUT);
+pinMode(x22, INPUT);
+pinMode(x21, INPUT);
+
+// Создаем задачу для работы с кнопками
+xTaskCreate(knopkaNEXT, "KNOPKA", 1000, NULL, 1, &ONE1);
+}
+
+void scanWiFi() {
+// Подключаемся к беспроводной сети режиме "станция"
+WiFi.mode(WIFI_STA);
+WiFi.disconnect();
+
+// Находим доступные беспроводные сети и выводим информацию о них
+int scan = WiFi.scanNetworks();
+
+for(int i = 0 ; i<scan;i++) {
+// Делаем задержку
+delay(200);
+
+
+// Выводим информацию о найденных сетях
+Serial.println((String)i + "."+ WiFi.SSID(i) + " " +  WiFi.RSSI(i) );
+// Добавляем все сети в единный массив
+WiFiSTR.push_back(WiFi.SSID(i));
+}}
+
+void loop() {
+
+  // Если 2 кнопки нажаты одновременно то мы вызываем функцию ,которая отвечает за скан сетей и запись их в массив 
+    if(digitalRead(x22) && digitalRead(x23))
+    {
+      scanWiFi();
+    }
+    
+  Serial.println(WiFiSTR[4]);
+
+}
+
+

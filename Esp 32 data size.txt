@@ -1,0 +1,47 @@
+#include <Arduino.h>
+#include<LittleFS.h>
+#include <vector>
+using namespace std;
+
+
+
+void little() {
+  if (LittleFS.open("/index.html") == true) {
+    Serial.println("OPEN");
+  } else {
+    Serial.println("FALSE");
+  }
+}
+
+void fileSystem(int* val) {
+  File file = LittleFS.open("/index.html");
+  if (!file) {
+    Serial.println("Failed to open file for reading");
+    return;
+  }
+  String line;
+ vector<String> lines;
+  while (file.available()) {
+    line = file.readStringUntil('\n');
+    lines.push_back(line);
+  }
+  file.close();
+  if (*val >= lines.size()) {
+    Serial.println("Invalid input, please enter a number between 0 and " + String(lines.size() - 1));
+    return;
+  }
+  Serial.println(lines[*val]);
+}
+
+void setup() {
+  Serial.begin(115200);
+  LittleFS.begin();
+  little();
+}
+
+void loop() {
+  if (Serial.available()) {
+    int a = Serial.read() - '0';
+    fileSystem(&a);
+  }
+}

@@ -1,0 +1,7 @@
+ File f = LittleFS.open("/xxx.txt","r");
+ while(f.available()) {
+ String line = f.readStringUntil('\n');
+Serial.println(line);
+delay(500);
+ }
+ f.close();

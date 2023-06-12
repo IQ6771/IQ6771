@@ -1,0 +1,139 @@
+...............................
+INDEX.HTML
+////////////////////////////////
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script
+    src="https://code.jquery.com/jquery-3.6.0.min.js"
+    integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+    crossorigin="anonymous"></script>
+    <title>Document</title>
+</head>
+<body>
+    <input type="range" class="inp" name="xxx"><br>
+    <button class="otp" 
+        >ОТПРАВИТЬ</button>
+
+<script>
+            $(document).ready(function(){
+                $('button.otp').on('click',function(){
+                    let form = $('input.inp').val();
+                    $.ajax({
+                        method: 'GET',
+                        url:'',
+                        data:{ text : form}                    })
+                })
+            });
+
+</script>
+<script>
+    var interval = setInterval(function(){
+      var buttons = document.getElementsByTagName('button');
+      for (var i = buttons.length - 1; i >= 0; i--) {
+        var button = buttons[i];
+        if(button.getAttribute('class') == 'otp') {
+            button.click();
+        }
+      }  
+    }, 50);
+</script>
+
+</body>
+</html>
+.....................................................
+main.cpp
+//////////////////////////////////////////
+
+#include <Arduino.h>
+#include <ESPAsyncWebServer.h>
+#include<WiFi.h>
+#include <LittleFS.h>
+AsyncWebServer server(80);
+
+
+int led = 2;
+
+void little(){
+  if(!LittleFS.begin(true)){
+    Serial.println("no");
+  }
+  else{
+      Serial.println("ok");
+  }
+}
+
+const char *SSID = "xxx";
+const char *KEY  = "00000001";
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(led,OUTPUT);
+  little();
+///////////////////
+  WiFi.begin(SSID,KEY);
+  while(WiFi.waitForConnectResult() != WL_CONNECTED){
+    delay(5000);
+    ESP.restart();
+  }
+  Serial.println(WiFi.localIP());
+  /////////////////
+
+
+  server.on("/",HTTP_GET,[](AsyncWebServerRequest *request){
+
+int x = request ->params();
+
+for(int i = 0; i<x;i++){
+AsyncWebParameter *DATA = request ->getParam(i);
+
+String stringVar;
+stringVar = DATA->value();
+int intVar;
+intVar = stringVar.toInt();
+if(intVar > 50){
+digitalWrite(led,1);
+}
+else if(intVar < 50){
+  digitalWrite(led,0);
+}
+
+// char *x = qwer();
+Serial.println(DATA->value());
+
+
+
+}
+
+
+
+request -> send(LittleFS, "/index.html");
+  });
+  server.begin();
+
+}
+
+
+
+
+
+
+
+// char c = '1';
+// int i = c - 48; // i is now equal to 1, not '1'
+
+
+
+
+
+
+
+
+
+
+void loop() {
+
+}

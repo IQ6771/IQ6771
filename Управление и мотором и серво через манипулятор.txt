@@ -1,0 +1,55 @@
+#include <Arduino.h>
+#include <Servo.h>
+
+// Создам объект класса <Servo.h>
+Servo SSS;
+
+// Обозначаем переменные
+int serv = 2;
+int motor = 3;
+int qwer = 12;
+int qwer2 = 11;
+
+
+
+// Функция с работой серворпивода
+void seR()
+{
+  int SerX = analogRead(serv);
+
+  int Ser = constrain(map(SerX, 0, 1024, 0, 180), 0, 180);
+
+  delayMicroseconds(5);
+  SSS.write(Ser);
+  delayMicroseconds(5);
+}
+// Функция с работой мотора
+
+void MOTOR()
+{
+  int MotorY = analogRead(motor);
+  int MoTTT = map(MotorY, 0, 1024, 0, 100);
+  delayMicroseconds(7);
+  analogWrite(qwer2,MoTTT);
+  delayMicroseconds(7);
+
+}
+// Инацилизация
+void setup()
+{
+  pinMode(serv, INPUT);
+  pinMode(motor, INPUT);
+  pinMode(qwer2, OUTPUT);
+  SSS.attach(qwer);
+  Serial.begin(9600);
+  
+}
+
+// Бесконечный цикл
+
+void loop()
+{
+  // CODE...Запуск функций в цикле
+  seR();
+  MOTOR();
+}

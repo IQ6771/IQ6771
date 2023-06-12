@@ -1,0 +1,50 @@
+#include <Arduino.h>
+
+TaskHandle_t Task1;
+TaskHandle_t Task2;
+
+
+void Task1code( void * pvParameters ) {
+ 
+
+  while(1) {
+   Serial.println("2___");
+   
+    vTaskDelay(200 / portTICK_PERIOD_MS); // Пауза в 500 мс
+  }
+}
+
+void Task2code( void * pvParameters ) {
+
+
+  while(1) {
+    Serial.println("1___");
+
+    vTaskDelay(100 / portTICK_PERIOD_MS); // Пауза в 250 мс
+  }
+}
+
+void setup() {
+    Serial.begin(115200);
+  xTaskCreate(
+    Task1code,    /* Функция, реализующая задачу потока 1 */
+    "Task1",      /* Имя задачи потока 1 */
+    1000,         /* 1000 элементов стека */
+    NULL,         /* Формальные параметры для запуска задачи потока 1 */
+    1,            /* Приоритет задачи потока 1 */
+    &Task1        /* Указатель на TaskHandle для задачи потока 1 */
+  );
+
+  xTaskCreate(
+    Task2code,    /* Функция, реализующая задачу потока 2 */
+    "Task2",      /* Имя задачи потока 2 */
+    1000,         /* 1000 элементов стека */
+    NULL,         /* Формальные параметры для запуска задачи потока 2 */
+    1,            /* Приоритет задачи потока 2 */
+    &Task2        /* Указатель на TaskHandle для задачи потока 2 */
+  );
+}
+
+void loop() {
+  // например, здесь можно обработать события, не связанные с потоками
+}
